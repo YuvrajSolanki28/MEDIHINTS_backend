@@ -6,6 +6,7 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/auth");
 
 
+
 dotenv.config();
 
 const app = express();
@@ -18,8 +19,9 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
+
 // Routes
-app.use("/api", authRoutes);
+app.use(authRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

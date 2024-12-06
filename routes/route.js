@@ -12,41 +12,53 @@ const router = express.Router();
 // In-memory storage for verification codes (Use Redis or DB for production)
 let verificationCodes = {};
 
-// Signup endpoint
-router.post("/signup", async (req, res) => {
-    const { fullName, email, contactNumber, address, age, gender, password, termsAccepted } = req.body;
-
-    if (!termsAccepted) {
-        return res.status(400).json({ error: "You must accept the terms and conditions" });
-    }
-
-    if (!email || !password || !fullName) {
-        return res.status(400).json({ error: "All required fields must be provided" });
-    }
-
+//signup
+router.post("/api/signup", async (req, res) => {
     try {
+        const { fullName, email, contactNumber, address, birthDate, gender, bloodGroup, password, termsAccepted, } = req.body;
+
+        // Check if terms are accepted
+        if (!termsAccepted) {
+            return res.status(400).json({ error: "You must accept the terms and conditions" });
+        }
+
+        // Validate required fields
+        if (!email || !password || !fullName || !contactNumber || !birthDate || !address || !gender || !bloodGroup
+        ) {
+            return res.status(400).json({ error: "All required fields must be provided" });
+        }
+
+        // Check if the email is already registered
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ error: "Email is already registered" });
         }
 
+        // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // Create a new user
         const newUser = new User({
             fullName,
             email,
             contactNumber,
             address,
-            age,
+            birthDate,
             gender,
+            bloodGroup,
             password: hashedPassword,
             termsAccepted,
         });
 
+        // Save the new user to the database
         await newUser.save();
 
-        const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+        // Generate a JWT token
+        const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
+            expiresIn: "1h",
+        });
 
+        // Respond with success message and token
         res.status(201).json({ message: "User registered successfully!", token });
     } catch (error) {
         console.error("Error in signup:", error);
@@ -54,8 +66,9 @@ router.post("/signup", async (req, res) => {
     }
 });
 
-// Login route
-router.post("/login", async (req, res) => {
+
+//login
+router.post("/api/login", async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -82,7 +95,7 @@ router.post("/login", async (req, res) => {
         user.token = token;
         await user.save();
 
-        // Generate and send verification code (optional)
+        // Optional: Generate and send verification code
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         verificationCodes[email] = code;
         sendVerificationCode(email, code);
@@ -90,6 +103,7 @@ router.post("/login", async (req, res) => {
         res.status(200).json({
             message: "Login successful. Verification code sent.",
             token,
+            uid: user._id, // Send UID to the client
         });
     } catch (error) {
         console.error("Error in login:", error);
@@ -97,9 +111,41 @@ router.post("/login", async (req, res) => {
     }
 });
 
+// Password change
+router.post("/api/change-password", async (req, res) => {
+    const { username, currentPassword, newPassword } = req.body;
 
-// Verify code route
-router.post("/verify-code", async (req, res) => {
+    try {
+        // Find the user from the database
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Check if the current password is correct
+        const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        if (!isPasswordValid) {
+            return res.status(400).json({ message: "Current password is incorrect" });
+        }
+
+        // Hash the new password
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update the user's password in the database
+        user.password = hashedNewPassword;
+        await user.save();
+
+        res.json({ message: "Password updated successfully" });
+
+    } catch (error) {
+        console.error("Error during password change:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+
+// Verify code
+router.post("/api/verify-code", async (req, res) => {
     const { email, code } = req.body;
 
     if (!email || !code) {
@@ -135,8 +181,8 @@ router.post("/verify-code", async (req, res) => {
 });
 
 
-// Forgot password route
-router.post('/forgotpassword', async (req, res) => {
+// Forgot password
+router.post('/api/forgotpassword', async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
@@ -176,8 +222,8 @@ router.post('/forgotpassword', async (req, res) => {
     }
 });
 
-// Reset password route
-router.post('/resetpassword/:token', async (req, res) => {
+// Reset password
+router.post('/api/resetpassword/:token', async (req, res) => {
     const { token } = req.params;
     const { newPassword } = req.body;
 
@@ -204,20 +250,62 @@ router.post('/resetpassword/:token', async (req, res) => {
     }
 });
 
-// backend code (user route)
-router.get('/user/:userId', async (req, res) => {
-    const userId = req.params.userId;
+// Route to update profile
+router.post('/api/update-profile', async (req, res) => {
+    const { fullName, email, birthDate, contactNumber, address, bloodGroup } = req.body;
+    const token = req.headers['authorization']; // Assuming the token is sent in the Authorization header
+
+    if (!token) {
+        return res.status(401).json({ message: 'Authorization token is required.' });
+    }
 
     try {
-        // Ensure that the userId is being queried correctly
-        const user = await User.findOne({ userId }); // Use _id if you're using MongoDB's default ObjectId
+        // Find the user by token
+        let user = await User.findOne({ token });
+
         if (!user) {
-            return res.status(404).json({ error: "User not found" });
+            return res.status(404).json({ message: 'User not found.' });
         }
-        res.json(user);
+
+        // Update the user's profile
+        user.fullName = fullName || user.fullName;
+        user.email = email || user.email;
+        user.birthDate = birthDate|| user.birthDate;
+        user.contactNumber = contactNumber || user.contactNumber;
+        user.address = address || user.address;
+        user.bloodGroup = bloodGroup || user.bloodGroup;
+
+        // Save the updated profile
+        await user.save();
+        return res.json({ message: 'Profile updated successfully!', user });
+
     } catch (error) {
-        console.error("Error in fetching user profile:", error);
-        res.status(500).json({ error: "Server error during user profile fetch" });
+        console.error('Error updating profile:', error);
+        return res.status(500).json({ message: 'An error occurred while saving your profile.' });
+    }
+});
+
+  
+
+//profile
+router.get('/api/users/:token', async (req, res) => {
+    const { token } = req.params;
+
+    if (!token) {
+        return res.status(400).send('Token is required');
+    }
+
+    try {
+        // Fetch user by token
+        const userProfile = await User.findOne({ token });
+        if (!userProfile) {
+            return res.status(404).send('User not found');
+        }
+
+        res.json(userProfile); // Return user data as JSON
+    } catch (error) {
+        console.error("Error fetching user:", error);
+        res.status(500).send('Server error');
     }
 });
 
