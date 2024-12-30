@@ -16,4 +16,6 @@ const userSchema = new mongoose.Schema({
     termsAccepted: { type: Boolean, required: true },
 });
 
-module.exports = mongoose.model("User", userSchema);
+const Users = mongoose.model('Users ', userSchema);
+
+module.exports = Users;

@@ -2,7 +2,10 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+const Users = require("../models/User");
+const Laboratory = require("../models/Laboratory");
+const Appointment = require("../models/Appoinment");
+const Doctor = require("../models/Doctor")
 const { sendVerificationCode } = require("../utils/sendCode");
 require('dotenv').config();
 const nodemailer = require("nodemailer");
@@ -29,7 +32,7 @@ router.post("/api/signup", async (req, res) => {
         }
 
         // Check if the email is already registered
-        const existingUser = await User.findOne({ email });
+        const existingUser = await Users.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ error: "Email is already registered" });
         }
@@ -38,7 +41,7 @@ router.post("/api/signup", async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Create a new user
-        const newUser = new User({
+        const newUser = new Users({
             fullName,
             email,
             contactNumber,
@@ -77,7 +80,7 @@ router.post("/api/login", async (req, res) => {
 
     try {
         // Check if the user exists
-        const user = await User.findOne({ email });
+        const user = await Users.findOne({ email });
         if (!user) {
             return res.status(400).json({ error: "Invalid credentials" });
         }
@@ -111,13 +114,30 @@ router.post("/api/login", async (req, res) => {
     }
 });
 
+// Admin login
+// Predefined admin credentials
+const ADMIN_EMAIL = "medihints@gmail.com";
+const ADMIN_PASSWORD = "medihints1234";
+
+// API to handle login
+router.post('/api/adminlogin', (req, res) => {
+    const { email, password } = req.body;
+
+    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+        return res.status(200).json({ message: "Login successful", isAdmin: true });
+    } else {
+        return res.status(401).json({ message: "Invalid credentials" });
+    }
+});
+
+
 // Password change
 router.post("/api/change-password", async (req, res) => {
     const { username, currentPassword, newPassword } = req.body;
 
     try {
         // Find the user from the database
-        const user = await User.findOne({ username });
+        const user = await Users.findOne({ username });
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
@@ -155,7 +175,7 @@ router.post("/api/verify-code", async (req, res) => {
     if (verificationCodes[email] === code) {
         try {
             // Find the user by email
-            const user = await User.findOne({ email });
+            const user = await Users.findOne({ email });
             if (!user) {
                 return res.status(404).json({ error: "User not found" });
             }
@@ -199,7 +219,7 @@ router.post('/api/forgotpassword', async (req, res) => {
     });
 
     try {
-        const user = await User.findOne({ email });
+        const user = await Users.findOne({ email });
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
@@ -234,7 +254,7 @@ router.post('/api/resetpassword/:token', async (req, res) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        const user = await User.findById(decoded.id);
+        const user = await Users.findById(decoded.id);
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
@@ -261,7 +281,7 @@ router.post('/api/update-profile', async (req, res) => {
 
     try {
         // Find the user by token
-        let user = await User.findOne({ token });
+        let user = await Users.findOne({ token });
 
         if (!user) {
             return res.status(404).json({ message: 'User not found.' });
@@ -297,7 +317,7 @@ router.get('/api/users/:token', async (req, res) => {
 
     try {
         // Fetch user by token
-        const userProfile = await User.findOne({ token });
+        const userProfile = await Users.findOne({ token });
         if (!userProfile) {
             return res.status(404).send('User not found');
         }
@@ -309,5 +329,160 @@ router.get('/api/users/:token', async (req, res) => {
     }
 });
 
+// Logout API
+router.post('/api/logout', async (req, res) => {
+    const token = req.headers['authorization']; // Assuming the token is sent in the Authorization header
+
+    if (!token) {
+        return res.status(401).json({ message: 'Authorization token is required to log out.' });
+    }
+
+    try {
+        // Find the user by token
+        const user = await Users.findOne({ token });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        // Clear the token from the user's record
+        user.token = null;
+        await user.save();
+
+        res.json({ message: 'Logged out successfully.' });
+    } catch (error) {
+        console.error('Error during logout:', error);
+        res.status(500).json({ message: 'Server error during logout.' });
+    }
+});
+
+// POST endpoint to receive form data and save it to the database
+router.post("/api/laboratory", async (req, res) => {
+    try {
+        const { labName, location, email, contactNumber, time, pincode, testTypes } = req.body;
+
+        const newLab = new Laboratory({
+            labName,
+            location,
+            email,
+            contactNumber,
+            time,
+            pincode,
+            testTypes,
+        });
+
+        await newLab.save();
+
+        res.status(200).json({ message: "Lab details saved successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Error saving lab details", error });
+    }
+});
+
+// Appointment
+router.post('/api/appointments', async (req, res) => {
+    try {
+        const { fullName, gender, email, contactNumber, birthDate, time, doctor, department, messageBox } = req.body;
+
+        const newAppointment = new Appointment({
+            fullName,
+            gender,
+            email,
+            contactNumber,
+            birthDate,
+            time,
+            doctor,
+            department,
+            messageBox
+        });
+
+        await newAppointment.save();
+
+        res.status(200).json({ message: "Lab details saved successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Error saving lab details", error });
+    }
+});
+
+// Doctor
+
+  
+
+//for admin
+// API Endpoint to Fetch Users
+router.get('/api/user', async (req, res) => {
+    try {
+        const datafetch = await Users.find();
+        res.send({status:"ok",data: datafetch})
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// API Endpoint to Fetch laboratory
+router.get('/api/laboratory', async (req, res) => {
+    try {
+        const datafetch = await Laboratory.find();
+        res.send({status:"ok",data: datafetch})
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// API Endpoint to Fetch Doctor
+router.get('/api/doctordata', async (req, res) => {
+    try {
+        const datafetch = await Doctor.find();
+        res.send({status:"ok",data: datafetch})
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// API Endpoint to Fetch Appoinment
+router.get('/api/appointment', async (req, res) => {
+    try {
+        const datafetch = await Appointment.find();
+        res.send({status:"ok",data: datafetch})
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Edit user endpoint
+router.put('/users/:id', (req, res) => {
+    const userId = parseInt(req.params.id);
+    const updatedData = req.body;
+
+    const userIndex = Users.findIndex(user => user.id === userId);
+
+    if (userIndex === -1) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update the user data
+    Users[userIndex] = { ...Users[userIndex], ...updatedData };
+
+    res.json({
+        message: 'User updated successfully',
+        user: Users[userIndex],
+    });
+})
+
+// DELETE endpoint to remove a user
+router.delete('/api/user/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const deletedUser = await Users.findByIdAndDelete(id); // Adjust this based on your DB setup
+        if (!deletedUser) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.status(200).json({ message: 'User deleted successfully', deletedUser });
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
 
 module.exports = router;
