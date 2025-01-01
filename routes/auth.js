@@ -405,69 +405,93 @@ router.post('/api/appointments', async (req, res) => {
 });
 
 // Doctor
+router.post('/api/doctors', async (req, res) => {
+    try {
+        const {doctorName, contactNumber, presentTime, department} = req.body;
 
+      const newDoctor = new Doctor({
+        doctorName,
+        contactNumber,
+        presentTime,
+        department
+      });
+
+      await newDoctor.save();
+
+      res.status(201).json({ message: 'Doctor data saved successfully' });
+    } catch (error) {
+      res.status(500).json({ message: 'Error saving doctor data', error });
+    }
+  });
+  
   
 
 //for admin
-// API Endpoint to Fetch Users
+// API Endpoints
 router.get('/api/user', async (req, res) => {
     try {
         const datafetch = await Users.find();
-        res.send({status:"ok",data: datafetch})
+        res.send({ status: "ok", data: datafetch });
     } catch (error) {
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error', error });
     }
 });
 
-// API Endpoint to Fetch laboratory
 router.get('/api/laboratory', async (req, res) => {
     try {
         const datafetch = await Laboratory.find();
-        res.send({status:"ok",data: datafetch})
+        res.send({ status: "ok", data: datafetch });
     } catch (error) {
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error', error });
     }
 });
 
-// API Endpoint to Fetch Doctor
-router.get('/api/doctordata', async (req, res) => {
-    try {
-        const datafetch = await Doctor.find();
-        res.send({status:"ok",data: datafetch})
-    } catch (error) {
-        res.status(500).json({ message: 'Server error' });
-    }
-});
+// router.get('/api/doctor', async (req, res) => {
+//     try {
+//         const datafetch = await Doctor.find();
+//         res.send({ status: "ok", data: datafetch });
+//     } catch (error) {
+//         res.status(500).json({ message: 'Server error', error });
+//     }
+// });
 
-// API Endpoint to Fetch Appoinment
 router.get('/api/appointment', async (req, res) => {
     try {
         const datafetch = await Appointment.find();
-        res.send({status:"ok",data: datafetch})
+        res.send({ status: "ok", data: datafetch });
     } catch (error) {
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error', error });
     }
 });
 
-// Edit user endpoint
-router.put('/users/:id', (req, res) => {
-    const userId = parseInt(req.params.id);
-    const updatedData = req.body;
+// Update Endpoint
+router.put('/api/:table/:id', async (req, res) => {
+    try {
+        const { table, id } = req.params;
+        const update = req.body;
+        const Model = { user: Users, laboratory: Laboratory, doctor: Doctor, appointment: Appointment }[table];
+        if (!Model) return res.status(400).send({ message: 'Invalid table name' });
 
-    const userIndex = Users.findIndex(user => user.id === userId);
-
-    if (userIndex === -1) {
-        return res.status(404).json({ message: 'User not found' });
+        const updatedRecord = await Model.findByIdAndUpdate(id, update, { new: true });
+        res.send({ status: "ok", data: updatedRecord });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error });
     }
+});
 
-    // Update the user data
-    Users[userIndex] = { ...Users[userIndex], ...updatedData };
+// Delete Endpoint
+router.delete('/api/:table/:id', async (req, res) => {
+    try {
+        const { table, id } = req.params;
+        const Model = { user: Users, laboratory: Laboratory, doctor: Doctor, appointment: Appointment }[table];
+        if (!Model) return res.status(400).send({ message: 'Invalid table name' });
 
-    res.json({
-        message: 'User updated successfully',
-        user: Users[userIndex],
-    });
-})
+        await Model.findByIdAndDelete(id);
+        res.send({ status: "ok", message: 'Record deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error });
+    }
+});
 
 // DELETE endpoint to remove a user
 router.delete('/api/user/:id', async (req, res) => {
