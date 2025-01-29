@@ -5,7 +5,6 @@ const jwt = require("jsonwebtoken");
 const Users = require("../models/User");
 const Laboratory = require("../models/Laboratory");
 const Appointment = require("../models/Appoinment");
-const Doctor = require("../models/Doctor")
 const { sendVerificationCode } = require("../utils/sendCode");
 require('dotenv').config();
 const nodemailer = require("nodemailer");
@@ -114,55 +113,6 @@ router.post("/api/login", async (req, res) => {
     }
 });
 
-// Admin login
-// Predefined admin credentials
-const ADMIN_EMAIL = "medihints@gmail.com";
-const ADMIN_PASSWORD = "medihints1234";
-
-// API to handle login
-router.post('/api/adminlogin', (req, res) => {
-    const { email, password } = req.body;
-
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        return res.status(200).json({ message: "Login successful", isAdmin: true });
-    } else {
-        return res.status(401).json({ message: "Invalid credentials" });
-    }
-});
-
-
-// Password change
-router.post("/api/change-password", async (req, res) => {
-    const { username, currentPassword, newPassword } = req.body;
-
-    try {
-        // Find the user from the database
-        const user = await Users.findOne({ username });
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        // Check if the current password is correct
-        const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
-        if (!isPasswordValid) {
-            return res.status(400).json({ message: "Current password is incorrect" });
-        }
-
-        // Hash the new password
-        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-
-        // Update the user's password in the database
-        user.password = hashedNewPassword;
-        await user.save();
-
-        res.json({ message: "Password updated successfully" });
-
-    } catch (error) {
-        console.error("Error during password change:", error);
-        res.status(500).json({ message: "Internal server error" });
-    }
-});
-
 
 // Verify code
 router.post("/api/verify-code", async (req, res) => {
@@ -200,6 +150,37 @@ router.post("/api/verify-code", async (req, res) => {
     }
 });
 
+// Password change
+router.post("/api/change-password", async (req, res) => {
+    const { username, currentPassword, newPassword } = req.body;
+
+    try {
+        // Find the user from the database
+        const user = await Users.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Check if the current password is correct
+        const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        if (!isPasswordValid) {
+            return res.status(400).json({ message: "Current password is incorrect" });
+        }
+
+        // Hash the new password
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update the user's password in the database
+        user.password = hashedNewPassword;
+        await user.save();
+
+        res.json({ message: "Password updated successfully" });
+
+    } catch (error) {
+        console.error("Error during password change:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
 
 // Forgot password
 router.post('/api/forgotpassword', async (req, res) => {
@@ -270,10 +251,10 @@ router.post('/api/resetpassword/:token', async (req, res) => {
     }
 });
 
-// Route to update profile
+// update profile
 router.post('/api/update-profile', async (req, res) => {
     const { fullName, email, birthDate, contactNumber, address, bloodGroup } = req.body;
-    const token = req.headers['authorization']; // Assuming the token is sent in the Authorization header
+    const token = req.headers['authorization']; 
 
     if (!token) {
         return res.status(401).json({ message: 'Authorization token is required.' });
@@ -305,8 +286,6 @@ router.post('/api/update-profile', async (req, res) => {
     }
 });
 
-  
-
 //profile
 router.get('/api/users/:token', async (req, res) => {
     const { token } = req.params;
@@ -329,23 +308,21 @@ router.get('/api/users/:token', async (req, res) => {
     }
 });
 
-// Logout API
+
+// logout
 router.post('/api/logout', async (req, res) => {
-    const token = req.headers['authorization']; // Assuming the token is sent in the Authorization header
+    const token = req.headers['authorization'];
 
     if (!token) {
         return res.status(401).json({ message: 'Authorization token is required to log out.' });
     }
-
     try {
-        // Find the user by token
         const user = await Users.findOne({ token });
 
         if (!user) {
             return res.status(404).json({ message: 'User not found.' });
         }
 
-        // Clear the token from the user's record
         user.token = null;
         await user.save();
 
@@ -356,26 +333,55 @@ router.post('/api/logout', async (req, res) => {
     }
 });
 
-// POST endpoint to receive form data and save it to the database
-router.post("/api/laboratory", async (req, res) => {
-    try {
-        const { labName, location, email, contactNumber, time, pincode, testTypes } = req.body;
 
+//signup for laboratory
+router.post("/api/signup/laboratory", async (req, res) => {
+    try {
+        const { labName, email, contactNumber, address, registrationNumber, password, termsAccepted } = req.body;
+
+        // Check if terms are accepted
+        if (!termsAccepted) {
+            return res.status(400).json({ error: "You must accept the terms and conditions" });
+        }
+
+        // Validate required fields
+        if (!email || !password || !labName || !contactNumber || !address || !registrationNumber) {
+            return res.status(400).json({ error: "All required fields must be provided" });
+        }
+
+        // Check if the email is already registered
+        const existingLab = await Laboratory.findOne({ email });
+        if (existingLab) {
+            return res.status(400).json({ error: "Email is already registered" });
+        }
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create a new laboratory
         const newLab = new Laboratory({
             labName,
-            location,
             email,
             contactNumber,
-            time,
-            pincode,
-            testTypes,
+            address,
+            registrationNumber,
+            password: hashedPassword,
+            termsAccepted,
         });
 
+        // Save the new laboratory to the database
         await newLab.save();
 
-        res.status(200).json({ message: "Lab details saved successfully" });
+        // Generate a JWT token
+        const token = jwt.sign({ id: newLab._id }, process.env.JWT_SECRET, {
+            expiresIn: "1h",
+        });
+
+        // Respond with success message and token
+        res.status(201).json({ message: "Laboratory registered successfully!", token });
     } catch (error) {
-        res.status(500).json({ message: "Error saving lab details", error });
+        console.error("Error in laboratory signup:", error);
+        res.status(500).json({ error: "Server error during laboratory signup" });
     }
 });
 
@@ -401,111 +407,6 @@ router.post('/api/appointments', async (req, res) => {
         res.status(200).json({ message: "Lab details saved successfully" });
     } catch (error) {
         res.status(500).json({ message: "Error saving lab details", error });
-    }
-});
-
-// Doctor
-router.post('/api/doctors', async (req, res) => {
-    try {
-        const {doctorName, contactNumber, presentTime, department} = req.body;
-
-      const newDoctor = new Doctor({
-        doctorName,
-        contactNumber,
-        presentTime,
-        department
-      });
-
-      await newDoctor.save();
-
-      res.status(201).json({ message: 'Doctor data saved successfully' });
-    } catch (error) {
-      res.status(500).json({ message: 'Error saving doctor data', error });
-    }
-  });
-  
-  
-
-//for admin
-// API Endpoints
-router.get('/api/user', async (req, res) => {
-    try {
-        const datafetch = await Users.find();
-        res.send({ status: "ok", data: datafetch });
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error });
-    }
-});
-
-router.get('/api/laboratory', async (req, res) => {
-    try {
-        const datafetch = await Laboratory.find();
-        res.send({ status: "ok", data: datafetch });
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error });
-    }
-});
-
-// router.get('/api/doctor', async (req, res) => {
-//     try {
-//         const datafetch = await Doctor.find();
-//         res.send({ status: "ok", data: datafetch });
-//     } catch (error) {
-//         res.status(500).json({ message: 'Server error', error });
-//     }
-// });
-
-router.get('/api/appointment', async (req, res) => {
-    try {
-        const datafetch = await Appointment.find();
-        res.send({ status: "ok", data: datafetch });
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error });
-    }
-});
-
-// Update Endpoint
-router.put('/api/:table/:id', async (req, res) => {
-    try {
-        const { table, id } = req.params;
-        const update = req.body;
-        const Model = { user: Users, laboratory: Laboratory, doctor: Doctor, appointment: Appointment }[table];
-        if (!Model) return res.status(400).send({ message: 'Invalid table name' });
-
-        const updatedRecord = await Model.findByIdAndUpdate(id, update, { new: true });
-        res.send({ status: "ok", data: updatedRecord });
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error });
-    }
-});
-
-// Delete Endpoint
-router.delete('/api/:table/:id', async (req, res) => {
-    try {
-        const { table, id } = req.params;
-        const Model = { user: Users, laboratory: Laboratory, doctor: Doctor, appointment: Appointment }[table];
-        if (!Model) return res.status(400).send({ message: 'Invalid table name' });
-
-        await Model.findByIdAndDelete(id);
-        res.send({ status: "ok", message: 'Record deleted successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error });
-    }
-});
-
-// DELETE endpoint to remove a user
-router.delete('/api/user/:id', async (req, res) => {
-    const { id } = req.params;
-
-    try {
-        const deletedUser = await Users.findByIdAndDelete(id); // Adjust this based on your DB setup
-        if (!deletedUser) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        res.status(200).json({ message: 'User deleted successfully', deletedUser });
-    } catch (error) {
-        console.error('Error deleting user:', error);
-        res.status(500).json({ message: 'Internal server error' });
     }
 });
 

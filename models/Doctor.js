@@ -1,32 +1,18 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-// Define the Doctor Schema
-const doctorSchema = new mongoose.Schema({
-    doctorName: {
-        type: String,
-        required: true, // Make it mandatory
-        trim: true,     // Removes whitespace
-    },
-    contactNumber: {
-        type: String,
-        required: true,
-        match: /^[0-9]{10}$/, // Regular expression for a 10-digit number
-    },
-    presentTime: {
-        type: String,
-        required: true,
-        trim: true,
-    },
-    department: {
-        type: String,
-        required: true,
-        trim: true,
-    }
-}, {
-    timestamps: true // Automatically manage createdAt and updatedAt timestamps
+const DoctorSchema = new mongoose.Schema({
+    token: { type: String },
+    fullName: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    contactNumber: { type: String, required: true },
+    clinicAddress: { type: String, required: true },
+    yearsOfExperience: { type: Number, required: true },
+    specialization: { type: String, required: true },
+    licenseNumber: { type: String, required: true },
+    password: { type: String, required: true },
+    termsAccepted: { type: Boolean, required: true },
 });
 
-// Create the Doctor Model
-const Doctor = mongoose.model('Doctor', doctorSchema);
+const Doctor = mongoose.model("Doctor", DoctorSchema);
 
 module.exports = Doctor;
