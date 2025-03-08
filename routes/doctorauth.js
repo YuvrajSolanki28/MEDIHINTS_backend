@@ -100,7 +100,7 @@ router.post("/api/login/doctor", async (req, res) => {
         }
 
         // Compare password
-        const isMatch = await bcrypt.compare(password, doctor.password);
+        const isMatch = await bcrypt.compare(password, doctors.password);
         if (!isMatch) {
             return res.status(400).json({ error: "Invalid credentials" });
         }
@@ -209,7 +209,7 @@ router.post('/api/forgotpassword/doctor', async (req, res) => {
         service: "gmail",
         secure: true,
         auth: {
-            doctor: process.env.EMAIL_SERVICE,
+            user: process.env.EMAIL_SERVICE,
             pass: process.env.EMAIL_PASSWORD,
         },
     });
@@ -217,11 +217,11 @@ router.post('/api/forgotpassword/doctor', async (req, res) => {
     try {
         const doctor = await Doctor.findOne({ email });
         if (!doctor) {
-            return res.status(404).json({ error: "doctor not found" });
+            return res.status(404).json({ error: "Doctor not found" });
         }
 
         const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        const resetLink = `http://localhost:3000/resetpassword/${token}`;
+        const resetLink = `http://localhost:3000/doctor_resetpassword/doctor/${token}`;
 
         const mailOptions = {
             from: process.env.EMAIL_SERVICE,
@@ -303,7 +303,7 @@ router.post('/api/update-profile/doctor', async (req, res) => {
 });
 
 //profile
-router.get('/api/users/doctor/:token', async (req, res) => {
+router.get('/api/doctor/:token', async (req, res) => {
     const { token } = req.params;
 
     if (!token) {
@@ -312,12 +312,12 @@ router.get('/api/users/doctor/:token', async (req, res) => {
 
     try {
         // Fetch doctor by token
-        const userProfile = await Doctor.findOne({ token });
-        if (!userProfile) {
+        const doctorProfile = await Doctor.findOne({ token });
+        if (!doctorProfile) {
             return res.status(404).send('doctor not found');
         }
 
-        res.json(userProfile); // Return doctor data as JSON
+        res.json(doctorProfile); // Return doctor data as JSON
     } catch (error) {
         console.error("Error fetching doctor:", error);
         res.status(500).send('Server error');
