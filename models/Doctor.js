@@ -10,7 +10,7 @@ const DoctorSchema = new mongoose.Schema({
     specialization: { type: String, required: true },
     licenseNumber: { type: String, required: true },
     password: { type: String, required: true },
-    termsAccepted: { type: Boolean, required: true },
+    img: { type: String },
 });
 
 const Doctor = mongoose.model("Doctor", DoctorSchema);

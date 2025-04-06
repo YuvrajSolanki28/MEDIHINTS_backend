@@ -14,75 +14,54 @@ let verificationCodes = {};
 // Doctor Signup Route
 router.post("/api/doctor/signup", async (req, res) => {
     try {
-        const {
-            fullName,
-            email,
-            contactNumber,
-            clinicAddress,
-            yearsOfExperience,
-            specialization,
-            licenseNumber,
-            password,
-            termsAccepted,
-        } = req.body;
-
-        // Check if terms are accepted
-        if (!termsAccepted) {
-            return res.status(400).json({ error: "You must accept the terms and conditions" });
-        }
-
-        // Validate required fields
-        if (
-            !fullName ||
-            !email ||
-            !contactNumber ||
-            !clinicAddress ||
-            !yearsOfExperience ||
-            !specialization ||
-            !licenseNumber ||
-            !password
-        ) {
-            return res.status(400).json({ error: "All required fields must be provided" });
-        }
-
-        // Check if the email is already registered
-        const existingDoctor = await Doctor.findOne({ email });
-        if (existingDoctor) {
-            return res.status(400).json({ error: "Email is already registered" });
-        }
-
-        // Hash the password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Create a new doctor
-        const newDoctor = new Doctor({
-            fullName,
-            email,
-            contactNumber,
-            clinicAddress,
-            yearsOfExperience,
-            specialization,
-            licenseNumber,
-            password: hashedPassword,
-            termsAccepted,
-        });
-
-        // Save the new doctor to the database
-        await newDoctor.save();
-
-        // Generate a JWT token
-        const token = jwt.sign({ id: newDoctor._id }, process.env.JWT_SECRET, {
-            expiresIn: "1h",
-        });
-
-        // Respond with success message and token
-        res.status(201).json({ message: "Doctor registered successfully!", token });
+      const {
+        fullName,
+        email,
+        contactNumber,
+        clinicAddress,
+        yearsOfExperience,
+        specialization,
+        licenseNumber,
+        password,
+      } = req.body;
+  
+      if (
+        !fullName || !email || !contactNumber || !clinicAddress ||
+        !yearsOfExperience || !specialization || !licenseNumber || !password
+      ) {
+        return res.status(400).json({ error: "All fields are required" });
+      }
+  
+      const existingDoctor = await Doctor.findOne({ email });
+      if (existingDoctor) {
+        return res.status(400).json({ error: "Email already registered" });
+      }
+  
+      const hashedPassword = await bcrypt.hash(password, 10);
+  
+      const newDoctor = new Doctor({
+        fullName,
+        email,
+        contactNumber,
+        clinicAddress,
+        yearsOfExperience,
+        specialization,
+        licenseNumber,
+        password: hashedPassword,
+      });
+  
+      await newDoctor.save();
+  
+      const token = jwt.sign({ id: newDoctor._id }, process.env.JWT_SECRET, {
+        expiresIn: "1h",
+      });
+  
+      res.status(201).json({ message: "Doctor registered successfully!", token });
     } catch (error) {
-        console.error("Error in doctor signup:", error);
-        res.status(500).json({ error: "Server error during signup" });
+      console.error("Signup error:", error);
+      res.status(500).json({ error: "Server error" });
     }
-});
-
+  });
 
 //login
 router.post("/api/login/doctor", async (req, res) => {
@@ -126,10 +105,10 @@ router.post("/api/login/doctor", async (req, res) => {
         console.error("Error in login:", error);
         res.status(500).json({ error: "Server error during login" });
     }
-  });
+});
 
- 
-  // Send verification code for doctor
+
+// Send verification code for doctor
 router.post("/api/verify-code/doctor", async (req, res) => {
     const { email, code } = req.body;
 
@@ -163,7 +142,7 @@ router.post("/api/verify-code/doctor", async (req, res) => {
     } else {
         return res.status(400).json({ error: "Invalid or expired verification code" });
     }
-  });
+});
 
 // Password change
 router.post("/api/change-password/doctor", async (req, res) => {
@@ -269,7 +248,7 @@ router.post('/api/resetpassword/doctor/:token', async (req, res) => {
 // update profile
 router.post('/api/update-profile/doctor', async (req, res) => {
     const { fullName, email, clinicAddress, contactNumber, yearsOfExperience, specialization, licenseNumber } = req.body;
-    const token = req.headers['authorization']; 
+    const token = req.headers['authorization'];
 
     if (!token) {
         return res.status(401).json({ message: 'Authorization token is required.' });
@@ -286,7 +265,7 @@ router.post('/api/update-profile/doctor', async (req, res) => {
         // Update the doctor's profile
         doctor.fullName = fullName || doctor.fullName;
         doctor.email = email || doctor.email;
-        doctor.clinicAddress = clinicAddress|| doctor.clinicAddress;
+        doctor.clinicAddress = clinicAddress || doctor.clinicAddress;
         doctor.contactNumber = contactNumber || doctor.contactNumber;
         doctor.yearsOfExperience = yearsOfExperience || doctor.yearsOfExperience;
         doctor.specialization = specialization || doctor.specialization;

@@ -3,6 +3,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Users = require("../models/User");
+const Doctor = require("../models/Doctor");
 const { sendVerificationCode } = require("../utils/sendCode");
 require('dotenv').config();
 const nodemailer = require("nodemailer");
@@ -336,7 +337,7 @@ router.post('/api/appointments', async (req, res) => {
     try {
         const { fullName, gender, email, contactNumber, birthDate, time, doctor, department, messageBox } = req.body;
 
-        const newAppointment = new Appointment({
+        const newAppointment = newAppointment({
             fullName,
             gender,
             email,
@@ -355,5 +356,17 @@ router.post('/api/appointments', async (req, res) => {
         res.status(500).json({ message: "Error saving lab details", error });
     }
 });
+
+/// Fetch doctor by ID
+router.get("/api/doctors/:_id", async (req, res) => {
+    try {
+      const doctor = await Doctor.findById(req.params._id);
+      if (!doctor) return res.status(404).json({ error: "Doctor not found" });
+  
+      res.json(doctor);
+    } catch (error) {
+      res.status(500).json({ error: "Server error" });
+    }
+  });
 
 module.exports = router;
