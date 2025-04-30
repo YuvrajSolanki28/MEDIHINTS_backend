@@ -13,10 +13,17 @@ const doctorRoutes = require("./routes/doctorauth");
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 8001;
+const PORT = 3000;
 
 // Connect to MongoDB
 connectDB();
+
+//configer cors
+const corsOptions = {
+    origin: process.env.FRONTEND_URL, // Replace with your frontend URL
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: ['Content-Type', 'Authorization'],
+};
 
 // Middleware
 app.use(cors());
