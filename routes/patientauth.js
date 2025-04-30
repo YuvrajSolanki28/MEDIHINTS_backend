@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Users = require("../models/User");
 const Doctor = require("../models/Doctor");
+const Appointment = require("../models/Appoinment");
 const { sendVerificationCode } = require("../utils/sendCode");
 require('dotenv').config();
 const nodemailer = require("nodemailer");
@@ -332,12 +333,22 @@ router.post('/api/logout', async (req, res) => {
     }
 });
 
-// Appointment
+// POST /api/appointments
 router.post('/api/appointments', async (req, res) => {
     try {
-        const { fullName, gender, email, contactNumber, birthDate, time, doctor, department, messageBox } = req.body;
+        const {
+            fullName,
+            gender,
+            email,
+            contactNumber,
+            birthDate,
+            time,
+            doctor,
+            department,
+            messageBox
+        } = req.body;
 
-        const newAppointment = newAppointment({
+        const newAppointment = new Appointment({
             fullName,
             gender,
             email,
@@ -350,10 +361,10 @@ router.post('/api/appointments', async (req, res) => {
         });
 
         await newAppointment.save();
-
-        res.status(200).json({ message: "Lab details saved successfully" });
+        res.status(200).json({ message: "Appointment booked successfully!" });
     } catch (error) {
-        res.status(500).json({ message: "Error saving lab details", error });
+        console.error("Error saving appointment:", error);
+        res.status(500).json({ message: "Error saving appointment", error });
     }
 });
 

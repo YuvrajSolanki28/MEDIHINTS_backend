@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const appoinmentSchema = new mongoose.Schema({
+const AppoinmentSchema = new mongoose.Schema({
     fullName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     contactNumber: { type: String },
@@ -13,6 +13,6 @@ const appoinmentSchema = new mongoose.Schema({
     messageBox: { type: String },
 });
 
-const Appoinment = mongoose.model('Appoinment ', appoinmentSchema);
+const Appoinment = mongoose.model('Appoinment ', AppoinmentSchema);
 
 module.exports = Appoinment;

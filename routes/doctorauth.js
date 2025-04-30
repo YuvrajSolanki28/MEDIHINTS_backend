@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Doctor = require("../models/Doctor")
+const Appointment = require("../models/Appoinment")
 const { sendVerificationCode } = require("../utils/sendCode");
 require('dotenv').config();
 const nodemailer = require("nodemailer");
@@ -326,5 +327,17 @@ router.post('/api/doctor/logout', async (req, res) => {
         res.status(500).json({ message: 'Server error during logout.' });
     }
 });
+
+// Fetch appointments
+router.get('/api/doctor/appointment', async (req, res) => {
+    try {
+      const datafetch = await Appointment.find().select(
+        "fullName birthDate time department status"
+      ); // Select only fields used by frontend
+      res.send({ status: "ok", data: datafetch });
+    } catch (error) {
+      res.status(500).json({ message: 'Server error', error });
+    }
+  });
 
 module.exports = router;
