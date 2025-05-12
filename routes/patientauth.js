@@ -105,7 +105,7 @@ router.post("/api/login", async (req, res) => {
         res.status(200).json({
             message: "Login successful. Verification code sent.",
             token,
-            uid: user._id, // Send UID to the client
+            uid: user._id,
         });
     } catch (error) {
         console.error("Error in login:", error);
@@ -206,7 +206,7 @@ router.post('/api/forgotpassword', async (req, res) => {
         }
 
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        const resetLink = `http://localhost:3000/resetpassword/${token}`;
+        const resetLink = `https://medihints-frontend.vercel.app/resetpassword/${token}`;
 
         const mailOptions = {
             from: process.env.EMAIL_SERVICE,

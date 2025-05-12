@@ -4,14 +4,13 @@ require('dotenv').config();
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
-  // host: "smtp.comcast.net",
-  // port: 587,
+  port: 465,
   secure: true,
   auth: {
     user: process.env.EMAIL_SERVICE,
     pass: process.env.EMAIL_PASSWORD,
   },
-  // authMethod:"PLAIN"
+  connectionTimeout: 5000,
 });
 
 exports.sendVerificationCode = (email, code) => {
