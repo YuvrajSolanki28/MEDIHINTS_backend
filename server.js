@@ -20,10 +20,9 @@ connectDB();
 
 // CORS options
 const corsOptions = {
-    origin: "https://medihints-frontend.vercel.app/",
+    origin: "https://medihints-frontend.vercel.app",
     methods: ["GET","HEAD","PUT","PATCH","POST","DELETE"],
-    credentials: true,
-    optionsSuccessStatus: 200,
+    allowedHeaders: ["Content-Type", "Authorization"],
 };
 
 // Middleware
