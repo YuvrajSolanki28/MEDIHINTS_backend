@@ -18,8 +18,16 @@ const PORT = process.env.PORT || 8001;
 // Connect to MongoDB
 connectDB();
 
+// CORS options
+const corsOptions = {
+    origin: "https://medihints-frontend-mpv6rt92n.vercel.app",
+    methods: ["GET","HEAD","PUT","PATCH","POST","DELETE"],
+    credentials: true,
+    optionsSuccessStatus: 200,
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 
