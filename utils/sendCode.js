@@ -1,18 +1,19 @@
 const nodemailer = require("nodemailer");
-const { Verification_Email_Template } = require("./EmailTemplate")
-require('dotenv').config();
+const { Verification_Email_Template } = require("./EmailTemplate");
+
+const port = parseInt(process.env.SMTP_PORT);
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST, // e.g., smtp.gmail.com
-  port: parseInt(process.env.SMTP_PORT), // 465 or 587
-  secure: process.env.SMTP_PORT === "465", // true for 465
+  port: port,
+  secure: port === 465, // true if 465
   auth: {
     user: process.env.EMAIL_SERVICE,
     pass: process.env.EMAIL_PASSWORD,
   },
 });
 
-// Optional: verify SMTP connection on startup
+// Check SMTP connection
 transporter.verify((error, success) => {
   if (error) {
     console.error("SMTP connection failed:", error);
@@ -23,12 +24,12 @@ transporter.verify((error, success) => {
 
 exports.sendVerificationCode = (email, code) => {
   const mailOptions = {
-    from: '"MEDIHINTS" <medihints@gmail.com>',
+    from: `"MEDIHINTS" <${process.env.EMAIL_SERVICE}>`,
     to: email,
     subject: "Your Verification Code",
-    text: `Your verification code is:`,
-    html: Verification_Email_Template.replace("{code}", code)
+    html: Verification_Email_Template.replace("{code}", code),
   };
+
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
       console.error("Error sending email:", error);
