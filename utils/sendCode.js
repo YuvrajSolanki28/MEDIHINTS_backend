@@ -5,8 +5,8 @@ const port = parseInt(process.env.SMTP_PORT); // Parse once
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
-  port: 587,
-  secure: false,
+  port: port,
+  secure: true,
   auth: {
     user: process.env.EMAIL_SERVICE,
     pass: process.env.EMAIL_PASSWORD,
