@@ -4,16 +4,16 @@ const { Verification_Email_Template } = require("./EmailTemplate");
 const port = parseInt(process.env.SMTP_PORT); // Parse once
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST, // smtp.gmail.com
-  port: port,
-  secure: port === 465, // true if SSL
+  host: process.env.SMTP_HOST,
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.EMAIL_SERVICE,
     pass: process.env.EMAIL_PASSWORD,
   },
+   debug: true, // Add this
+  logger: true, // And this
 });
-
-// Remove transporter.verify — causes issues on serverless
 
 exports.sendVerificationCode = (email, code) => {
   const mailOptions = {
