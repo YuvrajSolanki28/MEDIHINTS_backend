@@ -11,11 +11,6 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_SERVICE,
     pass: process.env.EMAIL_PASSWORD,
   },
-   pool: true, // Enable connection pooling
-  maxConnections: 5, // Limit connections
-  maxMessages: 10, // Limit messages per connection
-  logger: true, // Enable logging for debugging
-  debug: true, // Enable debugging output
 });
 
 exports.sendVerificationCode = (email, code) => {
