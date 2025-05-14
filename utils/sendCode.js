@@ -1,27 +1,33 @@
-const { Resend } = require('resend');
-const { Verification_Email_Template } = require("./EmailTemplate");
+const nodemailer = require("nodemailer");
+const { Verification_Email_Template } = require("./EmailTemplate")
 require('dotenv').config();
 
-console.log("inside mail util");
+ console.log("inside mail util")
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.EMAIL_SERVICE,
+    pass: process.env.EMAIL_PASSWORD,
+  },
+  debug: true,
+  logger: true,
+});
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-exports.sendVerificationCode = async (email, code) => {
-  try {
-    const { data, error } = await resend.emails.send({
-      from: `"MEDIHINTS" <${process.env.FROM_EMAIL}>`,
-      to: [email],
-      subject: "Your Verification Code",
-      text: `Your verification code is: ${code}`,
-      html: Verification_Email_Template.replace("{code}", code),
-    });
-
+exports.sendVerificationCode = (email, code) => {
+  const mailOptions = {
+    from: `"MEDIHINTS" <${process.env.EMAIL_SERVICE}>`,
+    to: email,
+    subject: "Your Verification Code",
+    text: `Your verification code is:`,
+    html: Verification_Email_Template.replace("{code}", code)
+  };
+  transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
       console.error("❌ Error sending email:", error);
     } else {
-      console.log("✅ Verification code sent:", data);
+      console.log("✅Verification code sent:", info.response);
     }
-  } catch (err) {
-    console.error("❌ Unexpected error:", err);
-  }
+  });
 };
