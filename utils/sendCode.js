@@ -11,6 +11,8 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_SERVICE,
     pass: process.env.EMAIL_PASSWORD,
   },
+  debug: true,
+  logger: true,
 });
 
 exports.sendVerificationCode = (email, code) => {
