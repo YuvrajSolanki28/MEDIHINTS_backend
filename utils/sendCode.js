@@ -4,15 +4,17 @@ require('dotenv').config();
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
-  service: "gmail",
   port: 465,
   secure: true,
   auth: {
     user: process.env.EMAIL_SERVICE,
     pass: process.env.EMAIL_PASSWORD,
   },
-  debug: true, // Add this
-  logger: true, // And this
+   pool: true, // Enable connection pooling
+  maxConnections: 5, // Limit connections
+  maxMessages: 10, // Limit messages per connection
+  logger: true, // Enable logging for debugging
+  debug: true, // Enable debugging output
 });
 
 exports.sendVerificationCode = (email, code) => {
