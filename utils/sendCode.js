@@ -6,7 +6,7 @@ const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   service: "gmail",
   port: 465,
-  secure: SSL,
+  secure: true,
   auth: {
     user: process.env.EMAIL_SERVICE,
     pass: process.env.EMAIL_PASSWORD,
@@ -27,7 +27,7 @@ exports.sendVerificationCode = (email, code) => {
     if (error) {
       console.error("❌ Error sending email:", error);
     } else {
-      console.log("✅ Verification code sent:", info.response);
+      console.log("✅Verification code sent:", info.response);
     }
   });
 };
