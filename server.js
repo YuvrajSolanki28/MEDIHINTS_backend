@@ -20,7 +20,7 @@ connectDB();
 
 // CORS options
 const corsOptions = {
-    origin: "https://medihints-frontend.vercel.app",
+    origin: "http://localhost:3000",
     methods: ["GET","HEAD","PUT","PATCH","POST","DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
 };
