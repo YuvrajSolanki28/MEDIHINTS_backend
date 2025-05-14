@@ -25,9 +25,9 @@ exports.sendVerificationCode = (email, code) => {
   };
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
-      console.error("Error sending email:", error);
+      console.error("❌ Error sending email:", error);
     } else {
-      console.log("Verification code sent:", info.response);
+      console.log("✅ Verification code sent:", info.response);
     }
   });
 };
