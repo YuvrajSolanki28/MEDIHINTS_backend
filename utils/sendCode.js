@@ -2,6 +2,7 @@ const nodemailer = require("nodemailer");
 const { Verification_Email_Template } = require("./EmailTemplate")
 require('dotenv').config();
 
+ console.log("inside mail util")
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: 465,
