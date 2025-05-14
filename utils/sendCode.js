@@ -6,7 +6,7 @@ const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   service: "gmail",
   port: 465,
-  secure: true,
+  secure: SSL,
   auth: {
     user: process.env.EMAIL_SERVICE,
     pass: process.env.EMAIL_PASSWORD,
@@ -17,7 +17,7 @@ const transporter = nodemailer.createTransport({
 
 exports.sendVerificationCode = (email, code) => {
   const mailOptions = {
-    from: '"MEDIHINTS" <medihints@gmail.com>',
+    from: '"MEDIHINTS" <medihints28@gmail.com>',
     to: email,
     subject: "Your Verification Code",
     text: `Your verification code is:`,
